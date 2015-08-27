@@ -280,7 +280,7 @@ func (s *server) ServeDNS(w dns.ResponseWriter, req *dns.Msg) {
 		return
 	}
 
-	if s.shouldForward(q) {
+	if q.Qclass != dns.ClassCHAOS && !strings.HasSuffix(name, s.config.Domain) {
 		resp := s.ServeDNSForward(w, req)
 		metricSizeAndDuration(resp, start, tcp)
 		return
@@ -353,6 +353,16 @@ func (s *server) ServeDNS(w dns.ResponseWriter, req *dns.Msg) {
 			logf("failure to return reply %q %d", err, m.Len())
 		}
 		metricSizeAndDuration(m, start, tcp)
+	}()
+
+	defer func() {
+		if m.Rcode != dns.RcodeSuccess {
+			if s.shouldForward(q) {
+				resp := s.ServeDNSForward(w, req)
+				metricSizeAndDuration(resp, start, tcp)
+				return
+			}
+		}
 	}()
 
 	if name == s.config.Domain {
