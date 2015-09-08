@@ -293,6 +293,12 @@ func (s *server) ServeDNS(w dns.ResponseWriter, req *dns.Msg) {
 			}
 			return
 		}
+
+		if (m.Rcode == dns.RcodeNameError || len(m.Answer) == 0) && s.config.ForwardLocal {
+			resp := s.ServeDNSForward(w, req)
+			metricSizeAndDuration(resp, start, tcp)
+			return
+		}
 		// Set TTL to the minimum of the RRset and dedup the message, i.e. remove identical RRs.
 		m = s.dedup(m)
 
@@ -335,16 +341,6 @@ func (s *server) ServeDNS(w dns.ResponseWriter, req *dns.Msg) {
 			logf("failure to return reply %q", err)
 		}
 		metricSizeAndDuration(m, start, tcp)
-	}()
-
-	defer func() {
-		if m.Rcode != dns.RcodeSuccess {
-			if s.shouldForward(q) {
-				resp := s.ServeDNSForward(w, req)
-				metricSizeAndDuration(resp, start, tcp)
-				return
-			}
-		}
 	}()
 
 	if name == s.config.Domain {
@@ -472,19 +468,6 @@ func (s *server) ServeDNS(w dns.ResponseWriter, req *dns.Msg) {
 		m.Ns = []dns.RR{s.NewSOA()}
 		m.Ns[0].Header().Ttl = s.config.MinTtl
 	}
-}
-
-func (s *server) shouldForward(q dns.Question) bool {
-	if q.Qclass == dns.ClassCHAOS {
-		return false
-	}
-	if !strings.HasSuffix(strings.ToLower(q.Name), s.config.Domain) {
-		return true
-	}
-	if s.config.ForwardLocal {
-		return true
-	}
-	return false
 }
 
 func (s *server) AddressRecords(q dns.Question, name string, previousRecords []dns.RR, bufsize uint16, dnssec, both bool) (records []dns.RR, err error) {
