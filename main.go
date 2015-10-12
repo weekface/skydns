@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -74,6 +75,7 @@ func init() {
 }
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	flag.Parse()
 	machines := strings.Split(machine, ",")
 	client := newClient(machines, tlspem, tlskey, cacert)
