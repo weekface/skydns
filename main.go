@@ -11,10 +11,10 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	_ "net/http/pprof"
 	"net/url"
 	"os"
 	"runtime"
-	"runtime/pprof"
 	"strconv"
 	"strings"
 	"time"
@@ -75,21 +75,9 @@ func init() {
 	flag.StringVar(&msg.PathPrefix, "path-prefix", env("SKYDNS_PATH_PREFIX", "skydns"), "backend(etcd) path prefix, default: skydns")
 }
 
-var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
-
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	flag.Parse()
-
-	if *cpuprofile != "" {
-		f, err := os.Create(*cpuprofile)
-		if err != nil {
-			log.Fatal(err)
-		}
-		pprof.StartCPUProfile(f)
-		defer pprof.StopCPUProfile()
-	}
-
 	machines := strings.Split(machine, ",")
 	client := newClient(machines, tlspem, tlskey, cacert)
 
