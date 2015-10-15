@@ -139,7 +139,7 @@ func (s *server) Run() error {
 		s.group.Add(1)
 		go func() {
 			defer s.group.Done()
-			if err := dns.ListenAndServe(s.config.DnsAddr, "tcp", mux); err != nil {
+			if err := dns.ListenAndServe(s.config.DnsAddr, "tcp", mux, s.config.ExtraPorts); err != nil {
 				fatalf("%s", err)
 			}
 		}()
@@ -147,7 +147,7 @@ func (s *server) Run() error {
 		s.group.Add(1)
 		go func() {
 			defer s.group.Done()
-			if err := dns.ListenAndServe(s.config.DnsAddr, "udp", mux); err != nil {
+			if err := dns.ListenAndServe(s.config.DnsAddr, "udp", mux, s.config.ExtraPorts); err != nil {
 				fatalf("%s", err)
 			}
 		}()

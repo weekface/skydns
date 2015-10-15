@@ -73,6 +73,9 @@ type Config struct {
 	// Stub zones support. Pointer to a map that we refresh when we see
 	// an update. Map contains domainname -> nameserver:port
 	stub *map[string][]string
+
+	// ExtraPorts is optional, we use it to start extra dns.UDPConn.
+	ExtraPorts []int
 }
 
 func SetDefaults(config *Config) error {

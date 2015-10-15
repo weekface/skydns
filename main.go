@@ -37,6 +37,7 @@ var (
 	machine    = ""
 	discover   = false
 	stub       = false
+	extraPorts = ""
 )
 
 func env(key, def string) string {
@@ -73,6 +74,7 @@ func init() {
 	flag.IntVar(&config.RCacheTtl, "rcache-ttl", server.RCacheTtl, "TTL of the response cache")
 
 	flag.StringVar(&msg.PathPrefix, "path-prefix", env("SKYDNS_PATH_PREFIX", "skydns"), "backend(etcd) path prefix, default: skydns")
+	flag.StringVar(&extraPorts, "extra-ports", env("SKYDNS_EXTRA_PORTS", ""), "ExtraPorts is optional, we use it to start extra dns.UDPConn.")
 }
 
 func main() {
@@ -80,6 +82,18 @@ func main() {
 	flag.Parse()
 	machines := strings.Split(machine, ",")
 	client := newClient(machines, tlspem, tlskey, cacert)
+
+	if extraPorts != "" {
+		eps := strings.Split(extraPorts, ",")
+		for _, port := range eps {
+			portInt, err := strconv.Atoi(port)
+			if err != nil || portInt < 1 || portInt > 65535 {
+				log.Fatalf("skydns: extraPorts is invalid: %s", err)
+			}
+			config.ExtraPorts = append(config.ExtraPorts, portInt)
+		}
+
+	}
 
 	if nameserver != "" {
 		for _, hostPort := range strings.Split(nameserver, ",") {
