@@ -22,6 +22,8 @@ import (
 
 const Version = "2.5.2c"
 
+const FlushCachePre = "flushcache."
+
 type server struct {
 	backend Backend
 	config  *Config
@@ -219,6 +221,12 @@ func (s *server) ServeDNS(w dns.ResponseWriter, req *dns.Msg) {
 		logf("received DNS Request for %q from %q with type %d", q.Name, w.RemoteAddr(), q.Qtype)
 	}
 
+	//reflash cache
+	if strings.HasPrefix(name, FlushCachePre) {
+		q_new := req.Question[0]
+		q_new.Name = strings.TrimPrefix(name, FlushCachePre)
+		s.rcache.Remove(cache.Key(q_new, dnssec, tcp))
+	}
 	// Check cache first.
 	m1 := s.rcache.Hit(q, dnssec, tcp, m.Id)
 	if m1 != nil {
