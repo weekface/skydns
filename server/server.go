@@ -22,7 +22,7 @@ import (
 
 const Version = "2.5.2c"
 
-const FlushCachePre = "flushcache."
+const FlushCachePre = "forceflushcache."
 
 type server struct {
 	backend Backend
